@@ -1,20 +1,26 @@
 package main
 
-import "testing"
+import (
+	"testing"
 
-func TestFindMetaTags12(t *testing.T) {
+	"github.com/stretchr/testify/assert"
+)
+
+func TestFindMetaTags(t *testing.T) {
 	var tests = []struct {
 		url    string
 		ogData ogMetaData
 	}{
 		{url: "https://www.facebook.com", ogData: ogMetaData{site: "https://www.facebook.com", ogImage: "https://www.facebook.com/images/fb_icon_325x325.png", ogDescription: "", ogWidth: 0, ogHeight: 0}},
-		{url: "https://www.google.com", ogData: ogMetaData{site: "https://www.google.com", ogImage: "", ogDescription: "", ogWidth: 0, ogHeight: 0}},
 	}
 
 	for _, test := range tests {
-		if ogResponse := findMetaTags(test.url); ogResponse != test.ogData {
-			t.Errorf("response value didn't match actual value: %v, %v", ogResponse, test.ogData)
-		}
+		ogResponse := findMetaTags(test.url)
+		assert.Equal(t, ogResponse.site, test.ogData.site)
+		assert.Equal(t, ogResponse.ogDescription, test.ogData.ogDescription)
+		assert.Equal(t, ogResponse.ogImage, test.ogData.ogImage)
+		assert.Equal(t, ogResponse.ogHeight, test.ogData.ogHeight)
+		assert.Equal(t, ogResponse.ogWidth, test.ogData.ogWidth)
 	}
 
 }

@@ -4,11 +4,12 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
+	"log"
 	"os"
 	"strconv"
 	"strings"
 
-	"github.com/gocolly/colly"
+	"github.com/gocolly/colly/v2"
 )
 
 // OGMetaData stores the key og meta-data from a site
@@ -19,6 +20,12 @@ type ogMetaData struct {
 	ogWidth       int
 	ogHeight      int
 }
+
+var db *sql.DB
+
+var (
+	repo Repository
+)
 
 func findMetaTags(site string) ogMetaData {
 	c := colly.NewCollector()
@@ -51,33 +58,18 @@ func findMetaTags(site string) ogMetaData {
 	return siteMetaData
 }
 
-func saveMetaTagsToDB(siteOGMetaData ogMetaData) {
-
-	db, err := sql.Open("mysql", os.Getenv("ogmeta_db"))
-	errorCheck(err)
-	tx, err := db.Begin()
-	errorCheck(err)
-	defer tx.Rollback()
-
-	stmtStr := "UPDATE Inspiration SET meta_og_image=?, meta_og_description=?, meta_og_height=?, meta_og_width=? WHERE url=?"
-	stmt, err := tx.Prepare(stmtStr)
-	errorCheck(err)
-
-	defer stmt.Close()
-
-	_, err = stmt.Exec(siteOGMetaData.ogImage, siteOGMetaData.ogDescription, siteOGMetaData.site, siteOGMetaData.ogHeight, siteOGMetaData.ogWidth)
-	errorCheck(err)
-
-	err = tx.Commit()
-	errorCheck(err)
-
-	defer db.Close()
-}
-
-func errorCheck(err error) {
+func updateDatabase(meta ogMetaData) {
+	var err error
+	repo, err = NewRepository("mysql", os.Getenv("sql_dns"))
 	if err != nil {
-		panic(err.Error())
+		log.Fatalf("Could not connect to database: %s", err.Error())
 	}
+
+	defer func() {
+		repo.Close()
+	}()
+
+	repo.Update(meta)
 }
 
 func main() {
@@ -85,8 +77,10 @@ func main() {
 	flag.Parse()
 	if len(*sitePtr) > 0 {
 		siteOGMetaData := findMetaTags(*sitePtr)
-		// now want to save these tags to a database
 		fmt.Println(siteOGMetaData)
+		if os.Getenv("save") == "true" {
+			updateDatabase(siteOGMetaData)
+		}
 	} else {
 		fmt.Println("no site URL provided")
 	}
