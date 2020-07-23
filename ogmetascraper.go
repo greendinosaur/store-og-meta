@@ -1,7 +1,6 @@
 package main
 
 import (
-	"database/sql"
 	"flag"
 	"fmt"
 	"log"
@@ -21,8 +20,6 @@ type ogMetaData struct {
 	ogHeight      int
 }
 
-var db *sql.DB
-
 var (
 	repo Repository
 )
@@ -35,17 +32,29 @@ func findMetaTags(site string) ogMetaData {
 		metaProperty := strings.ToLower(e.Attr("property"))
 		metaContent := e.Attr("content")
 
-		if strings.Contains(metaProperty, "og:image") {
+		/*if strings.Contains(metaProperty, "og:image") {
+			fmt.Printf("found image: %s", metaContent)
 			siteMetaData.ogImage = metaContent
 		}
 		if strings.Contains(metaProperty, "og:description") {
 			siteMetaData.ogDescription = metaContent
 		}
-		if strings.Contains(metaProperty, "og:width") {
+		if strings.Contains(metaProperty, "og:image:width") {
 			siteMetaData.ogWidth, _ = strconv.Atoi(metaContent)
 		}
-		if strings.Contains(metaProperty, "og:height") {
+		if strings.Contains(metaProperty, "og:image:height") {
 			siteMetaData.ogHeight, _ = strconv.Atoi(metaContent)
+		}*/
+		switch metaProperty {
+		case "og:image":
+			siteMetaData.ogImage = metaContent
+		case "og:description":
+			siteMetaData.ogDescription = metaContent
+		case "og:image:width":
+			siteMetaData.ogWidth, _ = strconv.Atoi(metaContent)
+		case "og:image:height":
+			siteMetaData.ogHeight, _ = strconv.Atoi(metaContent)
+
 		}
 	})
 
